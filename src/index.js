@@ -2,6 +2,7 @@
 var path = require('path'),
     fs = require('fs'),
     async = require('async'),
+    glob = require('glob-array'),
     raml = require('raml-parser'),
     _ = require('lodash'),
     schemaMocker = require('./schema.js'),
@@ -61,6 +62,7 @@ function generateFromPath(filesPath, formats, callback) {
 
 function generateFromFiles(files, formats, callback) {
     var requestsToMock = [];
+    var files = glob.sync(files, {});
     async.each(files, function (file, cb) {
         raml.loadFile(file).then(function (data) {
             getRamlRequestsToMock(data, '/', formats, function (reqs) {
