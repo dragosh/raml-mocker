@@ -65,7 +65,8 @@ function generateFromFiles(files, formats, callback) {
     var files = glob.sync(files, {});
     async.each(files, function (file, cb) {
         raml.loadFile(file).then(function (data) {
-            getRamlRequestsToMock(data, '/', formats, function (reqs) {
+            var uri = '/' + (data.version || '') + '/';
+            getRamlRequestsToMock(data, uri, formats, function (reqs) {
                 requestsToMock = _.union(requestsToMock, reqs);
                 cb();
             });
@@ -90,7 +91,7 @@ function getRamlRequestsToMock(definition, uri, formats, callback) {
                 nodeURI = nodeURI.replace('{' + name + '}', ':' + name);
             });
         }
-        uri = (uri + '/' + nodeURI).replace(/\/{2,}/g, '/');
+        uri = ( uri + '/' + nodeURI).replace(/\/{2,}/g, '/');
     }
     var tasks = [];
     if (definition.methods) {
