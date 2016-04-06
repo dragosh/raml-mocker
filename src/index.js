@@ -9,20 +9,16 @@ var path = require('path'),
     RequestMocker = require('./requestMocker.js');
 
 function generate(options, callback) {
-    var formats = {};
     if (options) {
-        if (options.formats) {
-            formats = options.formats;
-        }
         if (!callback || !_.isFunction(callback)) {
             console.error('[RAML-MOCKER] You must define a callback function:\n');
             showUsage();
         }
         try {
             if (options.path) {
-                generateFromPath(options.path, formats, callback);
+                generateFromPath(options.path, options, callback);
             } else if (options.files && _.isArray(options.files)) {
-                generateFromFiles(options.files, formats, callback);
+                generateFromFiles(options.files, options, callback);
             }
         } catch (exception) {
             console.error('[RAML-MOCKER] A runtime error has ocurred:\n');
@@ -45,7 +41,7 @@ function showUsage() {
     console.log('--------------------------------------------------------------------');
 }
 
-function generateFromPath(filesPath, formats, callback) {
+function generateFromPath(filesPath, options, callback) {
     fs.readdir(filesPath, function (err, files) {
         if (err) {
             throw err;
@@ -56,16 +52,19 @@ function generateFromPath(filesPath, formats, callback) {
                 filesToGenerate.push(path.join(filesPath, file));
             }
         });
-        generateFromFiles(filesToGenerate, formats, callback);
+        generateFromFiles(filesToGenerate, options, callback);
     });
 }
 
-function generateFromFiles(files, formats, callback) {
+function generateFromFiles(files, options, callback) {
     var requestsToMock = [];
     var files = glob.sync(files, {});
+    var formats = options.formats || {};
+
     async.each(files, function (file, cb) {
         raml.loadFile(file).then(function (data) {
-            var uri = '/' + (data.version || '') + '/';
+            var uri = '/' + (options.useApiVersion ? (data.version || '') + '/' : '');
+
             getRamlRequestsToMock(data, uri, formats, function (reqs) {
                 requestsToMock = _.union(requestsToMock, reqs);
                 cb();
