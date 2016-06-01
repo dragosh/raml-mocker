@@ -34,9 +34,11 @@
   "homepage": "https://github.com/RePoChO/raml-mocker",
   "dependencies": {
     "async": "^1.4.2",
-    "faker": "^3.0.1",
+    "faker": "^3.1.0",
     "glob-array": "^0.1.2",
     "lodash": "^3.10.1",
-    "raml-parser": "^0.8.11"
+    "raml-1-parser": "^0.2.21",
+    "raml-parser": "^0.8.11",
+    "randexp": "^0.4.2"
   }
 }

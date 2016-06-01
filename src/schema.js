@@ -1,26 +1,31 @@
 'use strict';
 var _ = require('lodash');
 var fs = require('fs');
+var path = require('path');
 var faker = require('faker');
 var FormatMocker = require('./format');
+var randexp = require('randexp').randexp;
 
-var DataMocker = function (schema, formats) {
+var DataMocker = function (schema, formats, ramlfile) {
+
     var formatMocker = new FormatMocker(formats);
-    var mocker = new SchemaMocker();
+    var mocker = new SchemaMocker(ramlfile);
     mocker.formatMocker = formatMocker;
     return mocker._mocker(schema, schema);
 };
 
-var SchemaMocker = function () {
+var SchemaMocker = function (ramlfile) {
+
     return {
         _mocker: function (schema, wholeSchema) {
+
             if (schema.$ref) {
                 var ref = schema.$ref;
                 var newSchema;
                 if (/^#\//i.test(ref)) {
-                    var path = ref.replace(/^#\//i, '').split('/');
+                    var schemaPath = ref.replace(/^#\//i, '').split('/');
                     var refSchema = wholeSchema;
-                    _.each(path, function (p) {
+                    _.each(schemaPath, function (p) {
                         refSchema = refSchema[p];
                     });
                     newSchema = _.merge(_.clone(refSchema, true), _.omit(schema, '$ref'));
@@ -29,14 +34,17 @@ var SchemaMocker = function () {
                     // relative path to json file
                     var relFilePath = ref.substring(0, ref.search('#'));
                     // absolute path to json file
-                    var absFilePath = process.env.PWD + '/' + relFilePath;
+                    var absFilePath = path.resolve(path.dirname(ramlfile),ref) ;
+
                     // property path to follow
                     var propPath = ref.substr(ref.search('#'), ref.length).split('/');
                     propPath.shift();
                     try {
+
                         var data = fs.readFileSync(absFilePath, 'utf8');
                         var obj = JSON.parse(data);
                         var externalSchema = obj;
+
                         _.each(propPath, function (p) {
                             externalSchema = externalSchema[p];
                         });
@@ -60,6 +68,8 @@ var SchemaMocker = function () {
                     type = type[0];
                 }
                 type = type.toLowerCase();
+
+
                 if (typeof (this[type + 'Mocker']) !== 'undefined') {
                     var ret = this[type + 'Mocker'](schema, wholeSchema);
                     return ret;
@@ -108,6 +118,7 @@ var SchemaMocker = function () {
              * additionalProperties, properties and patternProperties
              * dependences
              */
+
             if (schema.properties) {
                 _.each(schema.properties, function (value, key) {
                     ret[key] = _self._mocker(value, wholeSchema);
@@ -145,6 +156,7 @@ var SchemaMocker = function () {
         },
 
         stringMocker: function (schema) {
+
             /**
              * TODO:
              * maxLength
@@ -157,7 +169,12 @@ var SchemaMocker = function () {
             var minLength = schema.minLength || 1;
             var maxLength = schema.maxLength || (minLength < 50 ? 50 : schema.minLength);
             var strLen = _.random(minLength, maxLength);
-            ret = faker.lorem.words(strLen).trim();
+            if(schema.pattern) {
+                ret = randexp(schema.pattern);
+            } else {
+                ret = faker.lorem.word(strLen).trim();
+            }
+
             return ret;
         },
 
