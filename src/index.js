@@ -65,10 +65,7 @@ function generateFromFiles(files, options, callback) {
     async.each(files, function(file, cb) {
 
         raml.loadApi(file ).then(function(api) {
-
             var data = api.toJSON();
-            console.log(data);
-            //process.exit();
             var uri = '/' + (options.useApiVersion ? (data.version || '') + '/' : '');
 
             getRamlRequestsToMock(data, uri, formats, file , function(reqs) {
