@@ -160,8 +160,12 @@ function getResponsesByCode(responses) {
     _.each(responses, function(response, code) {
         if (!response) return;
         var body = response.body && response.body['application/json'];
-        if (response.body && response.body['application/hal+json']) {
-            body = response.body['application/hal+json'];
+        // it validates any possible media vendor type
+        for (var key in response.body) {
+            if (response.body.hasOwnProperty(key) && key.match(/application\/[A-Za-z.-0-1]*\+?(json|xml)/)) {
+                body = response.body[key];
+                break;
+            }
         }
         var schema = null;
         var example = null;
@@ -171,7 +175,8 @@ function getResponsesByCode(responses) {
             try {
                 schema = body.schema && JSON.parse(body.schema);
             } catch (exception) {
-                console.log(exception.stack);
+                console.warn('Unable to parse ', body.schema.red ,'schema Please use', '!include schemas/<file-name>'.green, 'instead');
+                console.error(exception);
             }
             responsesByCode.push({
                 code: code,
